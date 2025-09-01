@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ChevronDown, ChevronRight, PlusCircle, X, Edit2, Trash2, Play, Minimize, Maximize } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
-import AdvancedVideoPlayer from '../../components/AdvancedVideoPlayer';
+import SimpleHTML5Player from '../../components/SimpleHTML5Player';
 
 import {
   DndContext,
@@ -929,18 +929,20 @@ const Playlists: React.FC = () => {
 
             {/* Player Universal */}
             <div className={`w-full h-full ${isFullscreen ? 'p-0' : 'p-4 pt-16'}`}>
-              <AdvancedVideoPlayer
+              <SimpleHTML5Player
                 src={currentVideoUrl}
                 title={playlistVideosToPlay[playlistPlayerIndex]?.nome}
                 isLive={false}
                 autoplay={true}
                 controls
                 className="w-full h-full"
-                aspectRatio="16:9"
                 onEnded={handleVideoEnded}
                 onError={(error) => {
                   console.error('Erro no player:', error);
                   toast.error('Erro ao carregar vídeo');
+                }}
+                onReady={() => {
+                  console.log('Player de playlist pronto');
                 }}
               />
             </div>

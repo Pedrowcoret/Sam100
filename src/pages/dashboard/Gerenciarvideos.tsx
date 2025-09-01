@@ -3,7 +3,7 @@ import { ChevronLeft, Upload, Play, Trash2, FolderPlus, Video, Eye, EyeOff, Refr
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
-import AdvancedVideoPlayer from '../../components/AdvancedVideoPlayer';
+import SimpleHTML5Player from '../../components/SimpleHTML5Player';
 
 interface Video {
   id: number;
@@ -1133,31 +1133,20 @@ const GerenciarVideos: React.FC = () => {
 
             {/* Player HTML5 com URL direta do Wowza */}
             <div className={`w-full h-full ${isFullscreen ? 'p-0' : 'p-4 pt-16'}`}>
-              <AdvancedVideoPlayer
+              <SimpleHTML5Player
                 src={`/api/videos/view-url?video_id=${currentVideo.id}`}
                 title={currentVideo.nome}
                 isLive={false}
                 autoplay
                 controls
                 className="w-full h-full"
-                aspectRatio="16:9"
                 onError={(e) => {
                   console.error('Erro no player:', e);
                   // Fallback: abrir em nova aba usando nova API
                   openVideoInNewTab(currentVideo);
                 }}
-                streamStats={{
-                  bitrate: currentVideo.bitrate_video,
-                  quality: `${currentVideo.formato_original?.toUpperCase()} • ${currentVideo.codec_video?.toUpperCase()} • ${formatFileSize(currentVideo.tamanho || 0)}`
-                }}
-                socialSharing={{
-                  enabled: false,
-                  platforms: []
-                }}
-                watermark={{
-                  url: '',
-                  position: 'top-right',
-                  opacity: 0.5
+                onReady={() => {
+                  console.log('Player pronto para reprodução');
                 }}
               />
             </div>

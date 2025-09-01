@@ -3,7 +3,7 @@ import { ChevronLeft, Video, Settings, Play, Trash2, RefreshCw, AlertCircle, Che
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
-import AdvancedVideoPlayer from "./../../components/AdvancedVideoPlayer";
+import SimpleHTML5Player from '../../components/SimpleHTML5Player';
 
 interface VideoConversion {
   id: number;
@@ -1012,14 +1012,13 @@ const ConversaoVideos: React.FC = () => {
 
             {/* Player HTML5 Simples */}
             <div className={`w-full h-full ${isFullscreen ? 'p-0' : 'p-4 pt-16'}`}>
-              <AdvancedVideoPlayer
+              <SimpleHTML5Player
                 src={`/api/videos/view-url?video_id=${currentVideo.id}`}
                 title={currentVideo.nome}
                 isLive={false}
                 autoplay
                 controls
                 className="w-full h-full"
-                aspectRatio="16:9"
                 onError={(e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
                   console.error('Erro no player:', e);
                   // Fallback: abrir em nova aba usando nova API
@@ -1039,14 +1038,8 @@ const ConversaoVideos: React.FC = () => {
                     toast.error('Erro ao carregar vídeo.');
                   });
                 }}
-                socialSharing={{
-                  enabled: false,
-                  platforms: [] // vazio = não mostra nada
-                }}
-                watermark={undefined}
-                streamStats={{
-                  bitrate: currentVideo.current_bitrate,
-                  quality: `${currentVideo.formato_original?.toUpperCase()} • ${currentVideo.current_bitrate} kbps`
+                onReady={() => {
+                  console.log('Player de conversão pronto');
                 }}
               />
             </div>

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useStream } from '../context/StreamContext';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, X, SkipForward, SkipBack } from 'lucide-react';
 import Hls from 'hls.js';
-import AdvancedVideoPlayer from './AdvancedVideoPlayer';
+import SimpleHTML5Player from './SimpleHTML5Player';
 
 interface VideoPlayerProps {
   playlistVideo?: {
@@ -335,30 +335,27 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   const isLive = !playlistVideo && (streamData.isLive || obsStreamActive);
 
-  // Usar AdvancedVideoPlayer para melhor experiência
+  // Usar SimpleHTML5Player para melhor compatibilidade
   const videoSrc = playlistVideo?.url ? buildVideoUrl(playlistVideo.url) :
     streamData.isLive ? `http://samhost.wcore.com.br:1935/samhost/${userLogin}_live/playlist.m3u8` :
     obsStreamActive ? obsStreamUrl : '';
+
   return (
-    <AdvancedVideoPlayer
+    <SimpleHTML5Player
       src={videoSrc}
       title={videoTitle}
       isLive={isLive}
       autoplay={autoplay}
       controls={controls}
       className={`${className} ${height}`}
-      aspectRatio="16:9"
-      streamStats={isLive ? {
-        viewers: Math.floor(Math.random() * 50) + 5,
-        bitrate: 2500,
-        uptime: '01:23:45',
-        quality: '1080p',
-        isRecording: false
-      } : undefined}
       onEnded={onVideoEnd}
-      enableSocialSharing={true}
-      enableViewerCounter={isLive}
-      enableWatermark={true}
+      onError={(error) => {
+        console.error('Erro no player:', error);
+        // Em caso de erro, tentar abrir em nova aba
+        if (videoSrc) {
+          window.open(videoSrc, '_blank');
+        }
+      }}
     />
   );
 };

@@ -95,7 +95,22 @@ const UniversalVideoPlayer: React.FC<UniversalVideoPlayerProps> = ({
       return src;
     }
 
-    // Para o novo sistema, usar API para obter URL correta
+    // Para vídeos SSH, usar URL diretamente
+    if (src.includes('/api/videos-ssh/')) {
+      return src;
+    }
+    
+    // Para /content, adicionar token se necessário
+    if (src.startsWith('/content/')) {
+      const token = localStorage.getItem('auth_token');
+      if (token && !src.includes('auth_token=')) {
+        const separator = src.includes('?') ? '&' : '?';
+        return `${src}${separator}auth_token=${encodeURIComponent(token)}`;
+      }
+      return src;
+    }
+
+    // Para outros casos, usar API para obter URL correta
     return `/api/videos/view-url?path=${encodeURIComponent(src)}`;
   };
 

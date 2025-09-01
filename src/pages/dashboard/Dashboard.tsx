@@ -7,7 +7,7 @@ import {
   AlertCircle, CheckCircle, Wifi, WifiOff, Server, HardDrive
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import UniversalVideoPlayer from '../../components/UniversalVideoPlayer';
+import SimpleHTML5Player from '../../components/SimpleHTML5Player';
 
 interface DashboardStats {
   totalVideos: number;
@@ -424,18 +424,18 @@ const Dashboard: React.FC = () => {
 
             <div className="aspect-video bg-gray-900 rounded-xl overflow-hidden">
               {showPlayer && currentVideoUrl ? (
-                <UniversalVideoPlayer
+                <SimpleHTML5Player
                   src={currentVideoUrl}
                   title={streamStatus?.transmission?.titulo || 'Transmissão ao Vivo'}
                   isLive={streamStatus?.is_live || false}
                   autoplay={false}
                   controls={true}
                   className="w-full h-full"
-                  streamStats={{
-                    viewers: streamStatus?.transmission?.stats.viewers || streamStatus?.obs_stream?.viewers || 0,
-                    bitrate: streamStatus?.transmission?.stats.bitrate || streamStatus?.obs_stream?.bitrate || 0,
-                    uptime: streamStatus?.transmission?.stats.uptime || streamStatus?.obs_stream?.uptime || '00:00:00',
-                    quality: '1080p'
+                  onError={(error) => {
+                    console.error('Erro no player do dashboard:', error);
+                  }}
+                  onReady={() => {
+                    console.log('Player do dashboard pronto');
                   }}
                 />
               ) : (
