@@ -73,15 +73,27 @@ class VideoURLBuilder {
             let folderName = 'default';
             let fileName = 'video.mp4';
             
+            // Tentar extrair pasta e arquivo do caminho
             if (pathParts.length >= 5) {
                 folderName = pathParts[4];
                 fileName = pathParts[5] || 'video.mp4';
             } else if (pathParts.length >= 3) {
-                folderName = pathParts[1];
+                // Para estrutura streaming/usuario/pasta/arquivo
+                if (pathParts[0] === 'streaming') {
+                    folderName = pathParts[2] || 'default';
+                    fileName = pathParts[3] || 'video.mp4';
+                } else {
+                    folderName = pathParts[1] || 'default';
+                    fileName = pathParts[2] || 'video.mp4';
+                }
+            } else if (pathParts.length >= 2) {
+                folderName = pathParts[0];
                 fileName = pathParts[2] || 'video.mp4';
             } else if (pathParts.length >= 1) {
                 fileName = pathParts[pathParts.length - 1];
             }
+            
+            console.log(`🔍 Extraindo do caminho ${videoPath}: pasta=${folderName}, arquivo=${fileName}`);
             
             return await this.buildVideoViewUrl(userLogin, folderName, fileName, serverId);
         } catch (error) {
@@ -95,9 +107,9 @@ class VideoURLBuilder {
         try {
             // Buscar dados do vídeo
             const [videoRows] = await db.execute(
-                `SELECT v.nome, v.url, v.caminho, s.identificacao as folder_name, s.codigo_servidor
+                `SELECT v.nome, v.url, v.caminho, f.nome_sanitizado as folder_name, f.servidor_id as codigo_servidor
                  FROM videos v
-                 LEFT JOIN streamings s ON v.pasta = s.codigo
+                 LEFT JOIN folders f ON v.pasta = f.id
                  WHERE v.id = ? AND v.codigo_cliente = ?`,
                 [videoId, userId]
             );
@@ -107,17 +119,17 @@ class VideoURLBuilder {
             }
 
             const video = videoRows[0];
-            const serverId = video.codigo_servidor;
+            const serverId = video.codigo_servidor || 1;
 
             // Buscar login do usuário
             const [userRows] = await db.execute(
-                'SELECT usuario FROM streamings WHERE codigo_cliente = ? LIMIT 1',
+                'SELECT usuario, email FROM streamings WHERE codigo_cliente = ? LIMIT 1',
                 [userId]
             );
 
             const userLogin = userRows.length > 0 && userRows[0].usuario ? 
                 userRows[0].usuario : 
-                `user_${userId}`;
+                (userRows[0]?.email ? userRows[0].email.split('@')[0] : `user_${userId}`);
 
             // Construir URL
             return await this.buildVideoViewUrl(

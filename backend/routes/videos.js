@@ -15,7 +15,7 @@ router.get('/view-url', authMiddleware, async (req, res) => {
   try {
     const { path, video_id } = req.query;
     const userId = req.user.id;
-    const userLogin = req.user.email?.split('@')[0] || `user_${userId}`;
+    const userLogin = req.user.usuario || (req.user.email?.split('@')[0]) || `user_${userId}`;
 
     let viewUrl = null;
 
@@ -201,7 +201,8 @@ router.get('/', authMiddleware, async (req, res) => {
         is_mp4,
         compativel,
         largura,
-        altura
+        altura,
+        pasta
        FROM videos 
        WHERE (codigo_cliente = ? OR codigo_cliente IN (
          SELECT codigo_cliente FROM streamings WHERE codigo = ?
@@ -239,7 +240,7 @@ router.get('/', authMiddleware, async (req, res) => {
           const [newRows] = await db.execute(
             `SELECT 
               id, nome, url, caminho, duracao, tamanho_arquivo as tamanho,
-              bitrate_video, formato_original, codec_video, is_mp4, compativel, largura, altura
+              bitrate_video, formato_original, codec_video, is_mp4, compativel, largura, altura, pasta
              FROM videos 
              WHERE codigo_cliente = ? AND pasta = ? AND nome IS NOT NULL AND nome != ''
              ORDER BY id DESC`,
@@ -313,12 +314,18 @@ router.get('/', authMiddleware, async (req, res) => {
     // Atualizar espaço usado da pasta se houve mudanças
     if (totalSizeUpdated > 0 && Math.abs(totalSizeUpdated - (folderData.espaco_usado || 0)) > 5) {
       await db.execute(
-        'UPDATE streamings SET espaco_usado = ? WHERE codigo = ?',
+        'UPDATE folders SET espaco_usado = ? WHERE id = ?',
         [totalSizeUpdated, folderId]
       );
       console.log(`📊 Espaço da pasta atualizado: ${totalSizeUpdated}MB`);
     }
 
+    // Buscar nome real da pasta para usar na URL
+    const [folderInfoRows] = await db.execute(
+      'SELECT nome_sanitizado FROM folders WHERE id = ?',
+      [folderId]
+    );
+    const realFolderName = folderInfoRows.length > 0 ? folderInfoRows[0].nome_sanitizado : folderName;
     const videos = rows.map(video => {
       // Construir URL correta baseada no caminho
       let url = video.url || video.caminho;
@@ -326,7 +333,7 @@ router.get('/', authMiddleware, async (req, res) => {
       // Construir URL baseada na estrutura do servidor
       if (!url) {
         // Se não tem URL, construir baseado no nome do arquivo
-        url = `streaming/${userLogin}/${folderName}/${video.nome}`;
+        url = `streaming/${userLogin}/${realFolderName}/${video.nome}`;
       } else {
         // Limpar URL existente
         if (url.startsWith('/home/streaming/')) {
@@ -339,7 +346,7 @@ router.get('/', authMiddleware, async (req, res) => {
         
         // Garantir formato correto: usuario/pasta/arquivo
         if (!url.includes('/')) {
-          url = `streaming/${userLogin}/${folderName}/${url}`;
+          url = `streaming/${userLogin}/${realFolderName}/${url}`;
         } else if (!url.startsWith('streaming/')) {
           url = `streaming/${url}`;
         }
@@ -412,7 +419,7 @@ router.get('/', authMiddleware, async (req, res) => {
         compativel: video.compativel,
         largura: video.largura,
         altura: video.altura,
-        folder: folderName,
+        folder: realFolderName,
         user: userLogin,
         user_bitrate_limit: userBitrateLimit,
         bitrate_exceeds_limit: bitrateExceedsLimit,
@@ -695,6 +702,7 @@ router.post('/upload', authMiddleware, upload.single('video'), async (req, res) 
         url: relativePath,
         view_url: viewUrl,
         path: remotePath,
+        folder_name: folderName,
         originalFile: remotePath,
         bitrate_video: bitrateVideo,
         codec_video: codecVideo,
